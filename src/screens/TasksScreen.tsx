@@ -11,6 +11,18 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../state/AuthContext";
+import { db } from "../lib/firebase";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 
 type Task = {
   id: string;
@@ -48,27 +60,66 @@ const TasksScreen: React.FC = () => {
     AsyncStorage.setItem(storageKey, JSON.stringify(tasks)).catch(() => {});
   }, [storageKey, tasks]);
 
+  // Live Firestore sync when signed in
+  useEffect(() => {
+    if (!user?.uid) return;
+    const q = query(
+      collection(db, "tasks"),
+      where("uid", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const next: Task[] = snap.docs.map((d) => {
+        const data: any = d.data();
+        return {
+          id: d.id,
+          title: data.title,
+          completed: !!data.completed,
+          dueDate: data.dueDate ?? null,
+        };
+      });
+      setTasks(next);
+    });
+    return unsub;
+  }, [user?.uid]);
+
   const addTask = () => {
     const title = input.trim();
     if (!title) return;
-    const newTask: Task = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      title,
-      completed: false,
-      dueDate: null,
-    };
-    setTasks((prev) => [newTask, ...prev]);
-    setInput("");
+    if (user?.uid) {
+      addDoc(collection(db, "tasks"), {
+        uid: user.uid,
+        title,
+        completed: false,
+        dueDate: null,
+        createdAt: Date.now(),
+      }).catch(() => {});
+      setInput("");
+    } else {
+      const newTask: Task = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        title,
+        completed: false,
+        dueDate: null,
+      };
+      setTasks((prev) => [newTask, ...prev]);
+      setInput("");
+    }
   };
 
   const toggleTask = (id: string) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
+    if (user?.uid) {
+      const current = tasks.find((t) => t.id === id)?.completed ?? false;
+      updateDoc(doc(db, "tasks", id), { completed: !current }).catch(() => {});
+    }
   };
 
   const deleteTask = (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    if (user?.uid) deleteDoc(doc(db, "tasks", id)).catch(() => {});
   };
 
   const startEdit = (id: string) => setEditingId(id);
@@ -79,6 +130,8 @@ const TasksScreen: React.FC = () => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, title: newTitle } : t))
     );
+    if (user?.uid)
+      updateDoc(doc(db, "tasks", id), { title: newTitle }).catch(() => {});
   };
 
   const setDueDate = (id: string, when: Date) => {
@@ -86,6 +139,8 @@ const TasksScreen: React.FC = () => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, dueDate: ts } : t))
     );
+    if (user?.uid)
+      updateDoc(doc(db, "tasks", id), { dueDate: ts }).catch(() => {});
   };
 
   const renderItem = ({ item }: { item: Task }) => (
