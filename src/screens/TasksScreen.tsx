@@ -51,6 +51,11 @@ const TasksScreen: React.FC = () => {
   const [newTitle, setNewTitle] = useState("");
   const [newDueDate, setNewDueDate] = useState<Date | null>(null);
   const [showAddDatePicker, setShowAddDatePicker] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDueDate, setEditDueDate] = useState<Date | null>(null);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   // const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -133,6 +138,28 @@ const TasksScreen: React.FC = () => {
   };
 
   const startEdit = (id: string) => setEditingId(id);
+  const openEditModal = (task: Task) => {
+    setEditId(task.id);
+    setEditTitle(task.title);
+    setEditDueDate(task.dueDate ? new Date(task.dueDate) : null);
+    setIsEditOpen(true);
+  };
+  const saveEditModal = async () => {
+    if (!editId) return;
+    const title = (editTitle ?? "").trim();
+    if (!title) return;
+    const dueTs = editDueDate ? editDueDate.getTime() : null;
+    setTasks((prev) =>
+      prev.map((t) => (t.id === editId ? { ...t, title, dueDate: dueTs } : t))
+    );
+    if (user?.uid)
+      await updateDoc(doc(db, "tasks", editId), {
+        title,
+        dueDate: dueTs,
+      }).catch(() => {});
+    setIsEditOpen(false);
+    setEditId(null);
+  };
   const saveEdit = (id: string, title?: string) => {
     setEditingId(null);
     const newTitle = (title ?? "").trim();
@@ -193,7 +220,7 @@ const TasksScreen: React.FC = () => {
         </TouchableOpacity>
       )}
       <TouchableOpacity
-        onPress={() => startEdit(item.id)}
+        onPress={() => openEditModal(item)}
         style={tw`px-2 py-1 mr-1`}
       >
         <Text style={tw`text-black`}>✎</Text>
@@ -376,6 +403,71 @@ const TasksScreen: React.FC = () => {
                 )}
               >
                 <Text style={tw`text-white font-semibold`}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={isEditOpen} transparent animationType="slide">
+        <View style={tw`flex-1 justify-end bg-black/40`}>
+          <View style={tw`bg-white px-5 pt-5 pb-6 rounded-t-2xl`}>
+            <View style={tw`items-center mb-4`}>
+              <View style={tw`w-12 h-1.5 bg-gray-300 rounded-full`} />
+            </View>
+            <Text style={tw`text-xl font-bold mb-1`}>Edit task</Text>
+            <Text style={tw`text-sm text-gray-600 mb-4`}>
+              Update title or due date.
+            </Text>
+            <TextInput
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="Task title"
+              style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
+              returnKeyType="done"
+            />
+            <View style={tw`mt-3`}>
+              <TouchableOpacity
+                onPress={() => setShowEditDatePicker(true)}
+                style={tw`border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between`}
+              >
+                <Text style={tw`text-base`}>
+                  {editDueDate
+                    ? editDueDate.toLocaleDateString()
+                    : "Pick due date (optional)"}
+                </Text>
+                <Text>🗓</Text>
+              </TouchableOpacity>
+              {showEditDatePicker && (
+                <DateTimePicker
+                  value={editDueDate ?? new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(e, d) => {
+                    setShowEditDatePicker(false);
+                    if (d) setEditDueDate(d);
+                  }}
+                />
+              )}
+            </View>
+            <View style={tw`flex-row gap-3 mt-4`}>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsEditOpen(false);
+                  setEditId(null);
+                }}
+                style={tw`flex-1 rounded-xl py-3 items-center bg-gray-100`}
+              >
+                <Text style={tw`text-gray-800 font-semibold`}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={!editTitle.trim()}
+                onPress={saveEditModal}
+                style={tw.style(
+                  `flex-1 rounded-xl py-3 items-center`,
+                  editTitle.trim() ? `bg-black` : `bg-gray-300`
+                )}
+              >
+                <Text style={tw`text-white font-semibold`}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
