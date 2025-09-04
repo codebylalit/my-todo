@@ -21,7 +21,10 @@ const makeTasksKey = (username: string) => `tasks:${username}`;
 
 const TasksScreen: React.FC = () => {
   const { user, logout } = useAuth();
-  const storageKey = useMemo(() => makeTasksKey(user ?? "guest"), [user]);
+  const storageKey = useMemo(
+    () => makeTasksKey(user?.uid ?? "guest"),
+    [user?.uid]
+  );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState("");
 
@@ -86,7 +89,7 @@ const TasksScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Hello, {user}</Text>
+        <Text style={styles.headerTitle}>Hello, {user?.email ?? "you"}</Text>
         <TouchableOpacity onPress={logout}>
           <Text style={styles.logout}>Logout</Text>
         </TouchableOpacity>
