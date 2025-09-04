@@ -8,6 +8,7 @@ import {
   FlatList,
   StyleSheet,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../state/AuthContext";
 
@@ -15,6 +16,7 @@ type Task = {
   id: string;
   title: string;
   completed: boolean;
+  dueDate?: number | null;
 };
 
 const makeTasksKey = (username: string) => `tasks:${username}`;
@@ -27,6 +29,11 @@ const TasksScreen: React.FC = () => {
   );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [showDatePickerFor, setShowDatePickerFor] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     (async () => {
@@ -48,6 +55,7 @@ const TasksScreen: React.FC = () => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       title,
       completed: false,
+      dueDate: null,
     };
     setTasks((prev) => [newTask, ...prev]);
     setInput("");
@@ -63,6 +71,23 @@ const TasksScreen: React.FC = () => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const startEdit = (id: string) => setEditingId(id);
+  const saveEdit = (id: string, title: string) => {
+    setEditingId(null);
+    const newTitle = title.trim();
+    if (!newTitle) return;
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, title: newTitle } : t))
+    );
+  };
+
+  const setDueDate = (id: string, when: Date) => {
+    const ts = when.getTime();
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, dueDate: ts } : t))
+    );
+  };
+
   const renderItem = ({ item }: { item: Task }) => (
     <View style={styles.item}>
       <TouchableOpacity
@@ -71,18 +96,55 @@ const TasksScreen: React.FC = () => {
       >
         <View style={[styles.dot, item.completed && styles.dotOn]} />
       </TouchableOpacity>
-      <Text
-        style={[styles.itemText, item.completed && styles.completed]}
-        numberOfLines={2}
+      {editingId === item.id ? (
+        <TextInput
+          style={[styles.itemText, styles.editInput]}
+          defaultValue={item.title}
+          autoFocus
+          onSubmitEditing={(e) => saveEdit(item.id, e.nativeEvent.text)}
+          onBlur={(e) => saveEdit(item.id, e.nativeEvent.text)}
+        />
+      ) : (
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onLongPress={() => startEdit(item.id)}
+        >
+          <Text
+            style={[styles.itemText, item.completed && styles.completed]}
+            numberOfLines={2}
+          >
+            {item.title}
+          </Text>
+          {item.dueDate ? (
+            <Text style={styles.dueText}>
+              Due {new Date(item.dueDate).toLocaleDateString()}
+            </Text>
+          ) : null}
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        onPress={() => setShowDatePickerFor(item.id)}
+        style={styles.dueBtn}
       >
-        {item.title}
-      </Text>
+        <Text style={styles.dueBtnText}>Due</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         onPress={() => deleteTask(item.id)}
         style={styles.deleteBtn}
       >
         <Text style={styles.deleteText}>Delete</Text>
       </TouchableOpacity>
+      {showDatePickerFor === item.id && (
+        <DateTimePicker
+          value={item.dueDate ? new Date(item.dueDate) : new Date()}
+          mode="date"
+          display="default"
+          onChange={(e, d) => {
+            setShowDatePickerFor(null);
+            if (d) setDueDate(item.id, d);
+          }}
+        />
+      )}
     </View>
   );
 
@@ -107,8 +169,29 @@ const TasksScreen: React.FC = () => {
           <Text style={styles.addText}>Add</Text>
         </TouchableOpacity>
       </View>
+      <View style={styles.filters}>
+        {(["all", "active", "completed"] as const).map((f) => (
+          <TouchableOpacity
+            key={f}
+            onPress={() => setFilter(f)}
+            style={[styles.filterBtn, filter === f && styles.filterBtnOn]}
+          >
+            <Text
+              style={[styles.filterText, filter === f && styles.filterTextOn]}
+            >
+              {f[0].toUpperCase() + f.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <FlatList
-        data={tasks}
+        data={tasks.filter((t) =>
+          filter === "all"
+            ? true
+            : filter === "active"
+            ? !t.completed
+            : t.completed
+        )}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
@@ -214,9 +297,53 @@ const styles = StyleSheet.create({
     color: "#ff3b30",
     fontWeight: "600",
   },
+  dueBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginRight: 4,
+  },
+  dueBtnText: {
+    color: "#0a84ff",
+    fontWeight: "600",
+  },
+  dueText: {
+    color: "#666",
+    fontSize: 12,
+    marginTop: 2,
+  },
   empty: {
     textAlign: "center",
     color: "#666",
     marginTop: 24,
+  },
+  editInput: {
+    flex: 1,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
+  },
+  filters: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  filterBtn: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  filterBtnOn: {
+    backgroundColor: "#0a84ff",
+    borderColor: "#0a84ff",
+  },
+  filterText: {
+    color: "#333",
+    fontWeight: "600",
+  },
+  filterTextOn: {
+    color: "#fff",
   },
 });
