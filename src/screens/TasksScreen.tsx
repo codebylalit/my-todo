@@ -8,6 +8,8 @@ import {
   FlatList,
   Modal,
   Pressable,
+  Animated,
+  Dimensions,
 } from "react-native";
 import tw from "twrnc";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -58,6 +60,26 @@ const TasksScreen: React.FC = () => {
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const drawerWidth = Math.round(Dimensions.get("window").width * 0.75);
+  const drawerX = React.useRef(new Animated.Value(-drawerWidth)).current;
+
+  const openMenu = () => {
+    setIsMenuOpen(true);
+    Animated.timing(drawerX, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  };
+  const closeMenu = () => {
+    Animated.timing(drawerX, {
+      toValue: -drawerWidth,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setIsMenuOpen(false);
+    });
+  };
   // const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -249,12 +271,15 @@ const TasksScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
-      <Modal visible={isMenuOpen} transparent animationType="fade">
-        <Pressable
-          style={tw`flex-1 bg-black/40`}
-          onPress={() => setIsMenuOpen(false)}
-        >
-          <View style={[tw`h-full bg-white py-10 px-5`, { width: "75%" }]}>
+      <Modal visible={isMenuOpen} transparent animationType="none">
+        <View style={tw`flex-1 bg-black/40`}>
+          <Pressable style={tw`flex-1`} onPress={closeMenu} />
+          <Animated.View
+            style={[
+              tw`h-full bg-white py-10 px-5`,
+              { width: drawerWidth, transform: [{ translateX: drawerX }] },
+            ]}
+          >
             <Text style={tw`text-3xl font-extrabold mb-8`}>Justdo</Text>
             <View style={tw`mb-6`}>
               <Text style={tw`text-gray-500 text-xs mb-1`}>Signed in</Text>
@@ -264,21 +289,18 @@ const TasksScreen: React.FC = () => {
             </View>
             <TouchableOpacity
               onPress={() => {
-                setIsMenuOpen(false);
+                closeMenu();
                 logout();
               }}
               style={tw`py-3`}
             >
               <Text style={tw`text-red-500 font-semibold`}>Logout</Text>
             </TouchableOpacity>
-          </View>
-        </Pressable>
+          </Animated.View>
+        </View>
       </Modal>
       <View style={tw`flex-row justify-between items-center px-4 py-3`}>
-        <TouchableOpacity
-          onPress={() => setIsMenuOpen(true)}
-          style={tw`px-2 py-2`}
-        >
+        <TouchableOpacity onPress={openMenu} style={tw`px-2 py-2`}>
           <Text style={tw`text-black text-xl`}>☰</Text>
         </TouchableOpacity>
         <View style={tw`items-end flex-1 ml-2`}>
