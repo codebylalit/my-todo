@@ -217,6 +217,11 @@ const TasksScreen: React.FC = () => {
           >
             {item.title}
           </Text>
+          {item.dueDate ? (
+            <Text style={tw`text-gray-500 text-xs mt-1`}>
+              Due {new Date(item.dueDate).toLocaleDateString()}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       )}
       <TouchableOpacity
