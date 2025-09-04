@@ -46,6 +46,7 @@ const TasksScreen: React.FC = () => {
   const [showDatePickerFor, setShowDatePickerFor] = useState<string | null>(
     null
   );
+  // const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -214,6 +215,9 @@ const TasksScreen: React.FC = () => {
   );
 
   const remaining = tasks.filter((t) => !t.completed).length;
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+  const active = total - completed;
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
@@ -231,6 +235,19 @@ const TasksScreen: React.FC = () => {
           <Text style={tw`text-red-500 font-semibold`}>Logout</Text>
         </TouchableOpacity>
       </View>
+      {/* <View style={tw`px-4 pb-3`}>
+        <View
+          style={tw`flex-row items-center border border-gray-300 rounded-xl px-3 py-2 bg-white`}
+        >
+          <Text style={tw`text-gray-400 mr-2`}>🔍</Text>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search task"
+            style={tw`flex-1 text-base`}
+          />
+        </View>
+      </View> */}
       <View style={tw`flex-row px-4 gap-2`}>
         <TextInput
           value={input}
@@ -246,6 +263,29 @@ const TasksScreen: React.FC = () => {
         >
           <Text style={tw`text-white font-bold`}>Add</Text>
         </TouchableOpacity>
+      </View>
+      <View style={tw`px-4 mb-2`}>
+        <Text style={tw`text-lg font-semibold mb-2`}>My Task</Text>
+        <View style={tw`flex-row gap-3`}>
+          <View
+            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+          >
+            <Text style={tw`text-gray-500 text-xs mb-1`}>All</Text>
+            <Text style={tw`text-xl font-bold`}>{total}</Text>
+          </View>
+          <View
+            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+          >
+            <Text style={tw`text-gray-500 text-xs mb-1`}>Active</Text>
+            <Text style={tw`text-xl font-bold`}>{active}</Text>
+          </View>
+          <View
+            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+          >
+            <Text style={tw`text-gray-500 text-xs mb-1`}>Completed</Text>
+            <Text style={tw`text-xl font-bold`}>{completed}</Text>
+          </View>
+        </View>
       </View>
       <View style={tw`flex-row gap-2 px-4 mt-2`}>
         {(["all", "active", "completed"] as const).map((f) => (
@@ -270,6 +310,8 @@ const TasksScreen: React.FC = () => {
       </View>
       <FlatList
         data={tasks.filter((t) =>
+          // (search.trim().length === 0 ||
+          //   t.title.toLowerCase().includes(search.trim().toLowerCase())) &&
           filter === "all"
             ? true
             : filter === "active"
@@ -285,6 +327,13 @@ const TasksScreen: React.FC = () => {
           </Text>
         }
       />
+      <TouchableOpacity
+        onPress={addTask}
+        style={tw`absolute right-4 bottom-6 w-14 h-14 rounded-full bg-black items-center justify-center shadow`}
+        activeOpacity={0.8}
+      >
+        <Text style={tw`text-white text-2xl`}>+</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
