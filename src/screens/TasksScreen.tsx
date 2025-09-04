@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
-  Pressable,
-  Animated,
-  Dimensions,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -59,27 +58,6 @@ const TasksScreen: React.FC = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const drawerWidth = Math.round(Dimensions.get("window").width * 0.75);
-  const drawerX = React.useRef(new Animated.Value(-drawerWidth)).current;
-
-  const openMenu = () => {
-    setIsMenuOpen(true);
-    Animated.timing(drawerX, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  };
-  const closeMenu = () => {
-    Animated.timing(drawerX, {
-      toValue: -drawerWidth,
-      duration: 220,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) setIsMenuOpen(false);
-    });
-  };
   // const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -206,7 +184,18 @@ const TasksScreen: React.FC = () => {
 
   const renderItem = ({ item }: { item: Task }) => (
     <View
-      style={tw`flex-row items-center border border-gray-200 rounded-xl p-3 mb-3 bg-white`}
+      style={[
+        tw`flex-row items-center rounded-2xl p-4 bg-white`,
+        {
+          borderColor: "#E5E7EB",
+          borderWidth: 1,
+          shadowColor: "#000",
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 3,
+        },
+      ]}
     >
       <TouchableOpacity
         onPress={() => toggleTask(item.id)}
@@ -252,65 +241,47 @@ const TasksScreen: React.FC = () => {
         onPress={() => openEditModal(item)}
         style={tw`px-2 py-1 mr-1`}
       >
-        <Text style={tw`text-black`}>✎</Text>
+        <Ionicons name="create-outline" size={20} color="#000" />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => deleteTask(item.id)}
         style={tw`px-2 py-1`}
       >
-        <Text style={tw`text-red-500 font-semibold`}>Delete</Text>
+        <Ionicons name="trash-outline" size={20} color="#ff3b30" />
       </TouchableOpacity>
       {/* Removed per request: due date picker/action inside list */}
     </View>
   );
 
+  const navigation = useNavigation();
   const remaining = tasks.filter((t) => !t.completed).length;
+  const displayName = useMemo(() => {
+    const email = user?.email ?? "";
+    const name = email.split("@")[0] || "there";
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }, [user?.email]);
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
   const active = total - completed;
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
-      <Modal visible={isMenuOpen} transparent animationType="none">
-        <View style={tw`flex-1 bg-black/40`}>
-          <Pressable style={tw`flex-1`} onPress={closeMenu} />
-          <Animated.View
-            style={[
-              tw`h-full bg-white py-10 px-5`,
-              { width: drawerWidth, transform: [{ translateX: drawerX }] },
-            ]}
-          >
-            <Text style={tw`text-3xl font-extrabold mb-8`}>Justdo</Text>
-            <View style={tw`mb-6`}>
-              <Text style={tw`text-gray-500 text-xs mb-1`}>Signed in</Text>
-              <Text style={tw`text-base font-semibold`}>
-                {user?.email ?? "Guest"}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                closeMenu();
-                logout();
-              }}
-              style={tw`py-3`}
-            >
-              <Text style={tw`text-red-500 font-semibold`}>Logout</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
-      <View style={tw`flex-row justify-between items-center px-4 py-3`}>
-        <TouchableOpacity onPress={openMenu} style={tw`px-2 py-2`}>
-          <Text style={tw`text-black text-xl`}>☰</Text>
-        </TouchableOpacity>
-        <View style={tw`items-end flex-1 ml-2`}>
-          <Text style={tw`text-2xl font-bold`}>
-            Hi, {user?.email ?? "there"}
-          </Text>
+      <View style={tw`flex-row items-center px-4 py-4`}>
+        <View style={tw`flex-1 mt-8`}>
+          <Text style={tw`text-3xl font-extrabold`}>Hi, {displayName}</Text>
           <Text style={tw`mt-1 text-gray-600`}>
-            {remaining} {remaining === 1 ? "task" : "tasks"} remaining
+            {remaining} {remaining === 1 ? "task" : "tasks"} pending
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Settings" as never)}
+        >
+          <View
+            style={tw`w-9 h-9 rounded-full overflow-hidden bg-gray-200 items-center justify-center`}
+          >
+            <Ionicons name="person-circle-outline" size={28} color="#000" />
+          </View>
+        </TouchableOpacity>
       </View>
       {/* <View style={tw`px-4 pb-3`}>
         <View
@@ -382,11 +353,19 @@ const TasksScreen: React.FC = () => {
         )}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={tw`p-4 gap-2`}
+        ItemSeparatorComponent={() => <View style={tw`h-3`} />}
+        contentContainerStyle={tw`px-4 pb-28 pt-2`}
         ListEmptyComponent={
-          <Text style={tw`text-center text-gray-600 mt-6`}>
-            No tasks yet. Add one!
-          </Text>
+          <View style={tw`items-center mt-10`}>
+            <Ionicons
+              name="checkmark-done-circle-outline"
+              size={48}
+              color="#9CA3AF"
+            />
+            <Text style={tw`text-gray-500 mt-3`}>
+              No tasks yet. Tap + to add one
+            </Text>
+          </View>
         }
       />
       <TouchableOpacity
@@ -394,7 +373,7 @@ const TasksScreen: React.FC = () => {
         style={tw`absolute right-4 bottom-6 w-14 h-14 rounded-full bg-black items-center justify-center shadow`}
         activeOpacity={0.8}
       >
-        <Text style={tw`text-white text-2xl`}>+</Text>
+        <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={isAddOpen} transparent animationType="slide">

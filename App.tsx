@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View } from "react-native";
-import { AuthScreen, TasksScreen } from "./src/screens";
+import { AuthScreen, TasksScreen, SettingsScreen } from "./src/screens";
 import { AuthProvider, useAuth } from "./src/state/AuthContext";
 
 const Stack = createNativeStackNavigator();
@@ -13,11 +13,18 @@ function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator>
         {user ? (
-          <Stack.Screen
-            name="Tasks"
-            component={TasksScreen}
-            options={{ headerTitle: "My Tasks" }}
-          />
+          <>
+            <Stack.Screen
+              name="Tasks"
+              component={TasksScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{ headerTitle: "Settings" }}
+            />
+          </>
         ) : (
           <Stack.Screen
             name="Auth"
