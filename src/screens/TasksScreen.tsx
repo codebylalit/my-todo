@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
+  Pressable,
 } from "react-native";
 import tw from "twrnc";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -56,6 +57,7 @@ const TasksScreen: React.FC = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   // const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -247,19 +249,46 @@ const TasksScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
+      <Modal visible={isMenuOpen} transparent animationType="fade">
+        <Pressable
+          style={tw`flex-1 bg-black/40`}
+          onPress={() => setIsMenuOpen(false)}
+        >
+          <View style={[tw`h-full bg-white py-10 px-5`, { width: "75%" }]}>
+            <Text style={tw`text-3xl font-extrabold mb-8`}>Justdo</Text>
+            <View style={tw`mb-6`}>
+              <Text style={tw`text-gray-500 text-xs mb-1`}>Signed in</Text>
+              <Text style={tw`text-base font-semibold`}>
+                {user?.email ?? "Guest"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setIsMenuOpen(false);
+                logout();
+              }}
+              style={tw`py-3`}
+            >
+              <Text style={tw`text-red-500 font-semibold`}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
       <View style={tw`flex-row justify-between items-center px-4 py-3`}>
-        <View>
-          <Text style={tw`text-2xl font-bold`}>My Tasks</Text>
+        <TouchableOpacity
+          onPress={() => setIsMenuOpen(true)}
+          style={tw`px-2 py-2`}
+        >
+          <Text style={tw`text-black text-xl`}>☰</Text>
+        </TouchableOpacity>
+        <View style={tw`items-end flex-1 ml-2`}>
+          <Text style={tw`text-2xl font-bold`}>
+            Hi, {user?.email ?? "there"}
+          </Text>
           <Text style={tw`mt-1 text-gray-600`}>
             {remaining} {remaining === 1 ? "task" : "tasks"} remaining
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={logout}
-          style={tw`border border-red-200 px-3 py-2 rounded-xl`}
-        >
-          <Text style={tw`text-red-500 font-semibold`}>Logout</Text>
-        </TouchableOpacity>
       </View>
       {/* <View style={tw`px-4 pb-3`}>
         <View
