@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "my-todo",
-    "slug": "my-todo",
+    "name": "justdo",
+    "slug": "justdo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
