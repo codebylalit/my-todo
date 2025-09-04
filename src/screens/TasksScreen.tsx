@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Modal,
 } from "react-native";
 import tw from "twrnc";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -46,6 +47,10 @@ const TasksScreen: React.FC = () => {
   const [showDatePickerFor, setShowDatePickerFor] = useState<string | null>(
     null
   );
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDueDate, setNewDueDate] = useState<Date | null>(null);
+  const [showAddDatePicker, setShowAddDatePicker] = useState(false);
   // const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -84,27 +89,31 @@ const TasksScreen: React.FC = () => {
     return unsub;
   }, [user?.uid]);
 
-  const addTask = () => {
-    const title = input.trim();
+  const addTask = (titleArg?: string) => {
+    const title = (titleArg ?? newTitle ?? input).trim();
     if (!title) return;
     if (user?.uid) {
       addDoc(collection(db, "tasks"), {
         uid: user.uid,
         title,
         completed: false,
-        dueDate: null,
+        dueDate: newDueDate ? newDueDate.getTime() : null,
         createdAt: Date.now(),
       }).catch(() => {});
-      setInput("");
+      setNewTitle("");
+      setNewDueDate(null);
+      setIsAddOpen(false);
     } else {
       const newTask: Task = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         title,
         completed: false,
-        dueDate: null,
+        dueDate: newDueDate ? newDueDate.getTime() : null,
       };
       setTasks((prev) => [newTask, ...prev]);
-      setInput("");
+      setNewTitle("");
+      setNewDueDate(null);
+      setIsAddOpen(false);
     }
   };
 
@@ -124,9 +133,9 @@ const TasksScreen: React.FC = () => {
   };
 
   const startEdit = (id: string) => setEditingId(id);
-  const saveEdit = (id: string, title: string) => {
+  const saveEdit = (id: string, title?: string) => {
     setEditingId(null);
-    const newTitle = title.trim();
+    const newTitle = (title ?? "").trim();
     if (!newTitle) return;
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, title: newTitle } : t))
@@ -181,18 +190,13 @@ const TasksScreen: React.FC = () => {
           >
             {item.title}
           </Text>
-          {item.dueDate ? (
-            <Text style={tw`text-gray-500 text-xs mt-1`}>
-              Due {new Date(item.dueDate).toLocaleDateString()}
-            </Text>
-          ) : null}
         </TouchableOpacity>
       )}
       <TouchableOpacity
-        onPress={() => setShowDatePickerFor(item.id)}
+        onPress={() => startEdit(item.id)}
         style={tw`px-2 py-1 mr-1`}
       >
-        <Text style={tw`text-blue-600 font-semibold`}>Due</Text>
+        <Text style={tw`text-black`}>✎</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => deleteTask(item.id)}
@@ -200,17 +204,7 @@ const TasksScreen: React.FC = () => {
       >
         <Text style={tw`text-red-500 font-semibold`}>Delete</Text>
       </TouchableOpacity>
-      {showDatePickerFor === item.id && (
-        <DateTimePicker
-          value={item.dueDate ? new Date(item.dueDate) : new Date()}
-          mode="date"
-          display="default"
-          onChange={(e, d) => {
-            setShowDatePickerFor(null);
-            if (d) setDueDate(item.id, d);
-          }}
-        />
-      )}
+      {/* Removed per request: due date picker/action inside list */}
     </View>
   );
 
@@ -248,22 +242,7 @@ const TasksScreen: React.FC = () => {
           />
         </View>
       </View> */}
-      <View style={tw`flex-row px-4 gap-2`}>
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder="Add a new task"
-          style={tw`flex-1 border border-gray-300 rounded-xl px-3 py-2 text-base`}
-          returnKeyType="done"
-          onSubmitEditing={addTask}
-        />
-        <TouchableOpacity
-          onPress={addTask}
-          style={tw`bg-blue-600 px-4 rounded-xl justify-center`}
-        >
-          <Text style={tw`text-white font-bold`}>Add</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Top add input removed in favor of FAB modal */}
       <View style={tw`px-4 mb-2`}>
         <Text style={tw`text-lg font-semibold mb-2`}>My Task</Text>
         <View style={tw`flex-row gap-3`}>
@@ -328,12 +307,80 @@ const TasksScreen: React.FC = () => {
         }
       />
       <TouchableOpacity
-        onPress={addTask}
+        onPress={() => setIsAddOpen(true)}
         style={tw`absolute right-4 bottom-6 w-14 h-14 rounded-full bg-black items-center justify-center shadow`}
         activeOpacity={0.8}
       >
         <Text style={tw`text-white text-2xl`}>+</Text>
       </TouchableOpacity>
+
+      <Modal visible={isAddOpen} transparent animationType="slide">
+        <View style={tw`flex-1 justify-end bg-black/40`}>
+          <View style={tw`bg-white px-5 pt-5 pb-6 rounded-t-2xl`}>
+            <View style={tw`items-center mb-4`}>
+              <View style={tw`w-12 h-1.5 bg-gray-300 rounded-full`} />
+            </View>
+            <Text style={tw`text-xl font-bold mb-1`}>Add task</Text>
+            <Text style={tw`text-sm text-gray-600 mb-4`}>
+              Enter a title and optionally set a due date later.
+            </Text>
+            <TextInput
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder="Task title"
+              style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
+              returnKeyType="done"
+              onSubmitEditing={() => addTask()}
+            />
+            <View style={tw`mt-3`}>
+              <TouchableOpacity
+                onPress={() => setShowAddDatePicker(true)}
+                style={tw`border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between`}
+              >
+                <Text style={tw`text-base`}>
+                  {newDueDate
+                    ? newDueDate.toLocaleDateString()
+                    : "Pick due date (optional)"}
+                </Text>
+                <Text>🗓</Text>
+              </TouchableOpacity>
+              {showAddDatePicker && (
+                <DateTimePicker
+                  value={newDueDate ?? new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(e, d) => {
+                    setShowAddDatePicker(false);
+                    if (d) setNewDueDate(d);
+                  }}
+                />
+              )}
+            </View>
+            <View style={tw`flex-row gap-3 mt-4`}>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsAddOpen(false);
+                  setNewTitle("");
+                  setNewDueDate(null);
+                }}
+                style={tw`flex-1 rounded-xl py-3 items-center bg-gray-100`}
+              >
+                <Text style={tw`text-gray-800 font-semibold`}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={!newTitle.trim()}
+                onPress={() => addTask()}
+                style={tw.style(
+                  `flex-1 rounded-xl py-3 items-center`,
+                  newTitle.trim() ? `bg-black` : `bg-gray-300`
+                )}
+              >
+                <Text style={tw`text-white font-semibold`}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
