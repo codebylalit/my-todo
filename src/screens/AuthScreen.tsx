@@ -11,16 +11,20 @@ import tw from "twrnc";
 import { useAuth } from "../state/AuthContext";
 
 const AuthScreen: React.FC = () => {
-  const { login } = useAuth();
+  const { loginWithEmail, signupWithEmail } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("signup");
-  const [username, setUsername] = useState("");
-  const trimmed = useMemo(() => username.trim(), [username]);
-  const isDisabled = trimmed.length === 0;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const trimmedEmail = useMemo(() => email.trim(), [email]);
+  const isDisabled = trimmedEmail.length === 0 || password.length < 6;
 
   const handleContinue = async () => {
     if (isDisabled) return;
-    // For demo, login and signup both store username locally
-    await login(trimmed);
+    if (mode === "signup") {
+      await signupWithEmail(trimmedEmail, password);
+    } else {
+      await loginWithEmail(trimmedEmail, password);
+    }
   };
 
   return (
@@ -66,21 +70,33 @@ const AuthScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={tw`mb-6`}>
-          <Text style={tw`text-sm text-gray-700 mb-2`}>Username</Text>
+        <View style={tw`mb-3`}>
+          <Text style={tw`text-sm text-gray-700 mb-2`}>Email</Text>
           <TextInput
-            value={username}
-            onChangeText={setUsername}
-            placeholder={
-              mode === "signup" ? "Choose a username" : "Enter your username"
-            }
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
             autoCapitalize="none"
+            keyboardType="email-address"
+            style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
+            returnKeyType="next"
+          />
+        </View>
+        <View style={tw`mb-6`}>
+          <Text style={tw`text-sm text-gray-700 mb-2`}>Password</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Minimum 6 characters"
+            secureTextEntry
             style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
             returnKeyType="done"
             onSubmitEditing={handleContinue}
           />
           <Text style={tw`text-xs text-gray-500 mt-2`}>
-            Stored locally to keep your tasks on this device.
+            {mode === "signup"
+              ? "Create an account to sync your tasks."
+              : "Log in to access your tasks."}
           </Text>
         </View>
       </View>

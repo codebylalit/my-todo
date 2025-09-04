@@ -5,48 +5,53 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  User,
+} from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 type AuthContextValue = {
-  user: string | null;
+  user: User | null;
   loading: boolean;
-  login: (username: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  signupWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "auth:user";
-
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) setUser(stored);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return unsub;
   }, []);
 
-  const login = async (username: string) => {
-    setUser(username);
-    await AsyncStorage.setItem(STORAGE_KEY, username);
+  const loginWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const signupWithEmail = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
-    setUser(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    await signOut(auth);
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, logout }),
+    () => ({ user, loading, loginWithEmail, signupWithEmail, logout }),
     [user, loading]
   );
 
