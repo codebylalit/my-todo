@@ -183,73 +183,72 @@ const TasksScreen: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: Task }) => (
-    <View
-      style={[
-        tw`flex-row items-center rounded-2xl p-4 bg-white`,
-        {
-          borderColor: "#E5E7EB",
-          borderWidth: 1,
-          shadowColor: "#000",
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 4 },
-          elevation: 3,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={() => toggleTask(item.id)}
-        style={tw`w-6 h-6 rounded-full border-2 border-blue-600 items-center justify-center mr-3`}
-      >
-        <View
-          style={tw.style(
-            `w-3 h-3 rounded-full`,
-            item.completed ? `bg-blue-600` : `bg-transparent`
-          )}
-        />
-      </TouchableOpacity>
-      {editingId === item.id ? (
-        <TextInput
-          style={tw`flex-1 text-base border-b border-gray-300`}
-          defaultValue={item.title}
-          autoFocus
-          onSubmitEditing={(e) => saveEdit(item.id, e.nativeEvent.text)}
-          onBlur={(e) => saveEdit(item.id, e.nativeEvent.text)}
-        />
-      ) : (
+    <View style={tw`bg-white rounded-2xl p-5 border border-gray-100 shadow-sm`}>
+      <View style={tw`flex-row items-start`}>
+        {/* Checkbox */}
         <TouchableOpacity
-          style={tw`flex-1`}
-          onLongPress={() => startEdit(item.id)}
+          onPress={() => toggleTask(item.id)}
+          style={tw`w-7 h-7 rounded-full border-2 border-gray-300 items-center justify-center mr-4 mt-1`}
         >
-          <Text
-            style={tw.style(
-              `flex-1 text-base`,
-              item.completed ? `line-through text-gray-400` : undefined
-            )}
-            numberOfLines={2}
-          >
-            {item.title}
-          </Text>
-          {item.dueDate ? (
-            <Text style={tw`text-gray-500 text-xs mt-1`}>
-              Due {new Date(item.dueDate).toLocaleDateString()}
-            </Text>
-          ) : null}
+          {item.completed && (
+            <Ionicons name="checkmark" size={18} color="#000" />
+          )}
         </TouchableOpacity>
-      )}
-      <TouchableOpacity
-        onPress={() => openEditModal(item)}
-        style={tw`px-2 py-1 mr-1`}
-      >
-        <Ionicons name="create-outline" size={20} color="#000" />
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => deleteTask(item.id)}
-        style={tw`px-2 py-1`}
-      >
-        <Ionicons name="trash-outline" size={20} color="#ff3b30" />
-      </TouchableOpacity>
-      {/* Removed per request: due date picker/action inside list */}
+
+        {/* Task Content */}
+        <View style={tw`flex-1`}>
+          {editingId === item.id ? (
+            <TextInput
+              style={tw`text-base font-medium border-b border-gray-300 pb-2`}
+              defaultValue={item.title}
+              autoFocus
+              onSubmitEditing={(e) => saveEdit(item.id, e.nativeEvent.text)}
+              onBlur={(e) => saveEdit(item.id, e.nativeEvent.text)}
+            />
+          ) : (
+            <TouchableOpacity
+              style={tw`flex-1`}
+              onLongPress={() => startEdit(item.id)}
+            >
+              <Text
+                style={tw.style(
+                  `text-base font-medium leading-5`,
+                  item.completed
+                    ? `line-through text-gray-400`
+                    : `text-gray-900`
+                )}
+                numberOfLines={3}
+              >
+                {item.title}
+              </Text>
+              {item.dueDate && (
+                <View style={tw`flex-row items-center mt-3`}>
+                  <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                  <Text style={tw`text-gray-500 text-sm ml-2`}>
+                    Due {new Date(item.dueDate).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Action Buttons */}
+        <View style={tw`flex-row ml-3`}>
+          <TouchableOpacity
+            onPress={() => openEditModal(item)}
+            style={tw`w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-2`}
+          >
+            <Ionicons name="create-outline" size={18} color="#374151" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => deleteTask(item.id)}
+            style={tw`w-10 h-10 rounded-full bg-red-50 items-center justify-center`}
+          >
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 
@@ -266,243 +265,333 @@ const TasksScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
-      <View style={tw`flex-row items-center px-4 py-4`}>
-        <View style={tw`flex-1 mt-8`}>
-          <Text style={tw`text-3xl font-extrabold`}>Hi, {displayName}</Text>
-          <Text style={tw`mt-1 text-gray-600`}>
-            {remaining} {remaining === 1 ? "task" : "tasks"} pending
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Settings" as never)}
-        >
-          <View
-            style={tw`w-9 h-9 rounded-full overflow-hidden bg-gray-200 items-center justify-center`}
-          >
-            <Ionicons name="person-circle-outline" size={28} color="#000" />
+      {/* Header Section */}
+      <View style={tw`bg-white mt-8 px-6 pt-4 pb-6`}>
+        <View style={tw`flex-row items-center justify-between mb-6`}>
+          <View style={tw`flex-1`}>
+            <Text style={tw`text-3xl font-bold text-gray-900`}>
+              Hi, {displayName}
+            </Text>
+            <Text style={tw`text-base text-gray-500 mt-1`}>
+              {remaining} {remaining === 1 ? "task" : "tasks"} pending
+            </Text>
           </View>
-        </TouchableOpacity>
-      </View>
-      {/* <View style={tw`px-4 pb-3`}>
-        <View
-          style={tw`flex-row items-center border border-gray-300 rounded-xl px-3 py-2 bg-white`}
-        >
-          <Text style={tw`text-gray-400 mr-2`}>🔍</Text>
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search task"
-            style={tw`flex-1 text-base`}
-          />
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Settings" as never)}
+            style={tw`w-16 h-16 rounded-full bg-gray-100 items-center justify-center`}
+          >
+            <Ionicons name="person-outline" size={30} color="#374151" />
+          </TouchableOpacity>
         </View>
-      </View> */}
-      {/* Top add input removed in favor of FAB modal */}
-      <View style={tw`px-4 mb-2`}>
-        <Text style={tw`text-lg font-semibold mb-2`}>My Task</Text>
+
+        {/* Stats Cards */}
         <View style={tw`flex-row gap-3`}>
           <View
-            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+            style={tw`flex-1 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-3 border border-blue-200`}
           >
-            <Text style={tw`text-gray-500 text-xs mb-1`}>All</Text>
-            <Text style={tw`text-xl font-bold`}>{total}</Text>
+            <View style={tw`flex-row items-center justify-between mb-1`}>
+              <Text style={tw`text-blue-600 text-sm font-medium`}>
+                All Tasks
+              </Text>
+              <Ionicons name="list-outline" size={14} color="#2563EB" />
+            </View>
+            <Text style={tw`text-lg font-bold text-blue-900`}>{total}</Text>
           </View>
           <View
-            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+            style={tw`flex-1 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-3 border border-orange-200`}
           >
-            <Text style={tw`text-gray-500 text-xs mb-1`}>Active</Text>
-            <Text style={tw`text-xl font-bold`}>{active}</Text>
+            <View style={tw`flex-row items-center justify-between mb-1`}>
+              <Text style={tw`text-orange-600 text-sm font-medium`}>
+                Active
+              </Text>
+              <Ionicons name="time-outline" size={14} color="#EA580C" />
+            </View>
+            <Text style={tw`text-lg font-bold text-orange-900`}>{active}</Text>
           </View>
           <View
-            style={tw`flex-1 rounded-2xl bg-white border border-gray-200 p-3`}
+            style={tw`flex-1 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-3 border border-green-200`}
           >
-            <Text style={tw`text-gray-500 text-xs mb-1`}>Completed</Text>
-            <Text style={tw`text-xl font-bold`}>{completed}</Text>
+            <View style={tw`flex-row items-center justify-between mb-1`}>
+              <Text style={tw`text-green-600 text-sm font-medium`}>Done</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={14}
+                color="#16A34A"
+              />
+            </View>
+            <Text style={tw`text-lg font-bold text-green-900`}>
+              {completed}
+            </Text>
           </View>
         </View>
       </View>
-      <View style={tw`flex-row gap-2 px-4 mt-2`}>
-        {(["all", "active", "completed"] as const).map((f) => (
-          <TouchableOpacity
-            key={f}
-            onPress={() => setFilter(f)}
-            style={tw.style(
-              `border border-gray-300 rounded-full px-3 py-1.5`,
-              filter === f ? `bg-blue-600 border-blue-600` : undefined
-            )}
-          >
-            <Text
+
+      {/* Filter Tabs */}
+      <View style={tw`px-6 py-2`}>
+        <View style={tw`flex-row gap-3`}>
+          {(["all", "active", "completed"] as const).map((f) => (
+            <TouchableOpacity
+              key={f}
+              onPress={() => setFilter(f)}
               style={tw.style(
-                `text-gray-800 font-semibold`,
-                filter === f ? `text-white` : undefined
+                `rounded-full px-4 py-3 flex-1`,
+                filter === f ? `bg-black ` : `bg-white border border-gray-200`
               )}
             >
-              {f[0].toUpperCase() + f.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={tw.style(
+                  `text-center font-medium text-sm`,
+                  filter === f ? `text-white` : `text-gray-700`
+                )}
+              >
+                {f[0].toUpperCase() + f.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
-      <FlatList
-        data={tasks.filter((t) =>
-          // (search.trim().length === 0 ||
-          //   t.title.toLowerCase().includes(search.trim().toLowerCase())) &&
-          filter === "all"
-            ? true
-            : filter === "active"
-            ? !t.completed
-            : t.completed
-        )}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ItemSeparatorComponent={() => <View style={tw`h-3`} />}
-        contentContainerStyle={tw`px-4 pb-28 pt-2`}
-        ListEmptyComponent={
-          <View style={tw`items-center mt-10`}>
-            <Ionicons
-              name="checkmark-done-circle-outline"
-              size={48}
-              color="#9CA3AF"
-            />
-            <Text style={tw`text-gray-500 mt-3`}>
-              No tasks yet. Tap + to add one
-            </Text>
-          </View>
-        }
-      />
+      {/* Tasks List */}
+      <View style={tw`flex-1 px-6`}>
+        <FlatList
+          data={tasks.filter((t) =>
+            filter === "all"
+              ? true
+              : filter === "active"
+              ? !t.completed
+              : t.completed
+          )}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={tw`h-4`} />}
+          contentContainerStyle={tw`pb-32 pt-2`}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={tw`items-center justify-center py-16`}>
+              <View
+                style={tw`w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-6`}
+              >
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={40}
+                  color="#9CA3AF"
+                />
+              </View>
+              <Text style={tw`text-xl font-semibold text-gray-700 mb-2`}>
+                {filter === "all" ? "No tasks yet" : `No ${filter} tasks`}
+              </Text>
+              <Text style={tw`text-gray-500 text-center leading-6`}>
+                {filter === "all"
+                  ? "Tap the + button to create your first task"
+                  : `Switch to "All" to see all your tasks`}
+              </Text>
+            </View>
+          }
+        />
+      </View>
+      {/* Floating Action Button */}
       <TouchableOpacity
         onPress={() => setIsAddOpen(true)}
-        style={tw`absolute right-4 bottom-6 w-14 h-14 rounded-full bg-black items-center justify-center shadow`}
+        style={tw`absolute right-6 bottom-8 w-16 h-16 rounded-full bg-black items-center justify-center shadow-xl`}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={32} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={isAddOpen} transparent animationType="slide">
-        <View style={tw`flex-1 justify-end bg-black/40`}>
-          <View style={tw`bg-white px-5 pt-5 pb-6 rounded-t-2xl`}>
-            <View style={tw`items-center mb-4`}>
+        <View style={tw`flex-1 justify-end bg-black/50`}>
+          <View style={tw`bg-white px-6 pt-6 pb-8 rounded-t-3xl`}>
+            {/* Handle Bar */}
+            <View style={tw`items-center mb-6`}>
               <View style={tw`w-12 h-1.5 bg-gray-300 rounded-full`} />
             </View>
-            <Text style={tw`text-xl font-bold mb-1`}>Add task</Text>
-            <Text style={tw`text-sm text-gray-600 mb-4`}>
-              Enter a title and optionally set a due date later.
-            </Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="Task title"
-              style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
-              returnKeyType="done"
-              onSubmitEditing={() => addTask()}
-            />
-            <View style={tw`mt-3`}>
-              <TouchableOpacity
-                onPress={() => setShowAddDatePicker(true)}
-                style={tw`border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between`}
-              >
-                <Text style={tw`text-base`}>
-                  {newDueDate
-                    ? newDueDate.toLocaleDateString()
-                    : "Pick due date (optional)"}
-                </Text>
-                <Text>🗓</Text>
-              </TouchableOpacity>
-              {showAddDatePicker && (
-                <DateTimePicker
-                  value={newDueDate ?? new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(e, d) => {
-                    setShowAddDatePicker(false);
-                    if (d) setNewDueDate(d);
-                  }}
-                />
-              )}
+
+            {/* Header */}
+            <View style={tw`mb-6`}>
+              <Text style={tw`text-2xl font-bold text-gray-900 mb-2`}>
+                Add New Task
+              </Text>
+              <Text style={tw`text-gray-600 leading-5`}>
+                Create a new task and set a due date
+              </Text>
             </View>
-            <View style={tw`flex-row gap-3 mt-4`}>
+
+            {/* Form Fields */}
+            <View style={tw`gap-4`}>
+              {/* Task Title */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>
+                  Task Title
+                </Text>
+                <TextInput
+                  value={newTitle}
+                  onChangeText={setNewTitle}
+                  placeholder="Enter task title..."
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                  returnKeyType="done"
+                  onSubmitEditing={() => addTask()}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Due Date */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>
+                  Due Date 
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowAddDatePicker(true)}
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between bg-gray-50`}
+                >
+                  <Text style={tw`text-base text-gray-900`}>
+                    {newDueDate
+                      ? newDueDate.toLocaleDateString()
+                      : "Select due date"}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+                {showAddDatePicker && (
+                  <DateTimePicker
+                    value={newDueDate ?? new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={(e, d) => {
+                      setShowAddDatePicker(false);
+                      if (d) setNewDueDate(d);
+                    }}
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={tw`flex-row gap-3 mt-8`}>
               <TouchableOpacity
                 onPress={() => {
                   setIsAddOpen(false);
                   setNewTitle("");
                   setNewDueDate(null);
                 }}
-                style={tw`flex-1 rounded-xl py-3 items-center bg-gray-100`}
+                style={tw`flex-1 rounded-xl py-4 items-center bg-gray-100`}
               >
-                <Text style={tw`text-gray-800 font-semibold`}>Cancel</Text>
+                <Text style={tw`text-gray-700 font-semibold text-base`}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={!newTitle.trim()}
                 onPress={() => addTask()}
                 style={tw.style(
-                  `flex-1 rounded-xl py-3 items-center`,
+                  `flex-1 rounded-xl py-4 items-center`,
                   newTitle.trim() ? `bg-black` : `bg-gray-300`
                 )}
               >
-                <Text style={tw`text-white font-semibold`}>Add</Text>
+                <Text
+                  style={tw.style(
+                    `font-semibold text-base`,
+                    newTitle.trim() ? `text-white` : `text-gray-500`
+                  )}
+                >
+                  Add Task
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
       <Modal visible={isEditOpen} transparent animationType="slide">
-        <View style={tw`flex-1 justify-end bg-black/40`}>
-          <View style={tw`bg-white px-5 pt-5 pb-6 rounded-t-2xl`}>
-            <View style={tw`items-center mb-4`}>
+        <View style={tw`flex-1 justify-end bg-black/50`}>
+          <View style={tw`bg-white px-6 pt-6 pb-8 rounded-t-3xl`}>
+            {/* Handle Bar */}
+            <View style={tw`items-center mb-6`}>
               <View style={tw`w-12 h-1.5 bg-gray-300 rounded-full`} />
             </View>
-            <Text style={tw`text-xl font-bold mb-1`}>Edit task</Text>
-            <Text style={tw`text-sm text-gray-600 mb-4`}>
-              Update title or due date.
-            </Text>
-            <TextInput
-              value={editTitle}
-              onChangeText={setEditTitle}
-              placeholder="Task title"
-              style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
-              returnKeyType="done"
-            />
-            <View style={tw`mt-3`}>
-              <TouchableOpacity
-                onPress={() => setShowEditDatePicker(true)}
-                style={tw`border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between`}
-              >
-                <Text style={tw`text-base`}>
-                  {editDueDate
-                    ? editDueDate.toLocaleDateString()
-                    : "Pick due date (optional)"}
-                </Text>
-                <Text>🗓</Text>
-              </TouchableOpacity>
-              {showEditDatePicker && (
-                <DateTimePicker
-                  value={editDueDate ?? new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(e, d) => {
-                    setShowEditDatePicker(false);
-                    if (d) setEditDueDate(d);
-                  }}
-                />
-              )}
+
+            {/* Header */}
+            <View style={tw`mb-6`}>
+              <Text style={tw`text-2xl font-bold text-gray-900 mb-2`}>
+                Edit Task
+              </Text>
+              <Text style={tw`text-gray-600 leading-5`}>
+                Update the task title or due date
+              </Text>
             </View>
-            <View style={tw`flex-row gap-3 mt-4`}>
+
+            {/* Form Fields */}
+            <View style={tw`gap-4`}>
+              {/* Task Title */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>
+                  Task Title
+                </Text>
+                <TextInput
+                  value={editTitle}
+                  onChangeText={setEditTitle}
+                  placeholder="Enter task title..."
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                  returnKeyType="done"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Due Date */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>
+                  Due Date
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowEditDatePicker(true)}
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between bg-gray-50`}
+                >
+                  <Text style={tw`text-base text-gray-900`}>
+                    {editDueDate
+                      ? editDueDate.toLocaleDateString()
+                      : "Select due date"}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+                {showEditDatePicker && (
+                  <DateTimePicker
+                    value={editDueDate ?? new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={(e, d) => {
+                      setShowEditDatePicker(false);
+                      if (d) setEditDueDate(d);
+                    }}
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={tw`flex-row gap-3 mt-8`}>
               <TouchableOpacity
                 onPress={() => {
                   setIsEditOpen(false);
                   setEditId(null);
                 }}
-                style={tw`flex-1 rounded-xl py-3 items-center bg-gray-100`}
+                style={tw`flex-1 rounded-xl py-4 items-center bg-gray-100`}
               >
-                <Text style={tw`text-gray-800 font-semibold`}>Cancel</Text>
+                <Text style={tw`text-gray-700 font-semibold text-base`}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={!editTitle.trim()}
                 onPress={saveEditModal}
                 style={tw.style(
-                  `flex-1 rounded-xl py-3 items-center`,
+                  `flex-1 rounded-xl py-4 items-center`,
                   editTitle.trim() ? `bg-black` : `bg-gray-300`
                 )}
               >
-                <Text style={tw`text-white font-semibold`}>Save</Text>
+                <Text
+                  style={tw.style(
+                    `font-semibold text-base`,
+                    editTitle.trim() ? `text-white` : `text-gray-500`
+                  )}
+                >
+                  Save Changes
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
