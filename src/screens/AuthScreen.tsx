@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import tw from "twrnc";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../state/AuthContext";
 
 const AuthScreen: React.FC = () => {
@@ -46,114 +48,157 @@ const AuthScreen: React.FC = () => {
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
       <View style={tw`flex-1 px-6`}>
-        <View style={tw`mt-8 mb-12`}>
-          <Text style={tw`text-xl font-bold`}>Justdo</Text>
+        {/* Header */}
+        <View style={tw`mt-10 mb-12`}>
+          <View style={tw`flex-row items-center`}>
+            <Image
+              source={require("../../assets/icon.jpg")}
+              style={tw`w-8 h-8 mr-2`}
+              resizeMode="contain"
+            />
+            <Text style={tw`text-2xl font-bold text-gray-900`}>Justdo</Text>
+          </View>
         </View>
 
+        {/* Hero Section */}
         <View style={tw`flex-1 justify-center`}>
-          <Text style={tw`text-4xl font-extrabold text-black`}>
-            get <Text style={tw`text-gray-400`}>things</Text>
+          <Text style={tw`text-5xl font-black text-gray-900 mb-2`}>
+            Get things
           </Text>
-          <Text style={tw`text-4xl font-extrabold text-gray-400`}>
-            done with <Text style={tw`text-black`}>simple</Text>
+          <Text style={tw`text-5xl font-light text-gray-500 mb-2`}>
+            done with
           </Text>
-          <Text style={tw`text-4xl font-extrabold text-black`}>task lists</Text>
+          <Text style={tw`text-5xl font-black text-gray-900`}>
+            simple tasks.
+          </Text>
         </View>
 
-        <View style={tw`mb-3`}>
+        {/* Action Buttons */}
+        <View style={tw`mb-8`}>
           <TouchableOpacity
             onPress={() => {
               setMode("signup");
               setIsModalVisible(true);
             }}
-            style={tw`rounded-2xl py-3 items-center bg-black`}
+            style={tw`rounded-2xl py-4 items-center bg-black mb-3 flex-row justify-center`}
           >
-            <Text style={tw`text-white font-semibold`}>Sign up</Text>
+            <Ionicons name="mail" size={20} color="#fff" style={tw`mr-2`} />
+            <Text style={tw`text-white font-semibold text-base`}>
+              Sign up with Email
+            </Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={tw`mb-8`}>
           <TouchableOpacity
             onPress={() => {
               setMode("login");
               setIsModalVisible(true);
             }}
-            style={tw`rounded-2xl py-3 items-center bg-gray-100`}
+            style={tw`rounded-2xl py-3 items-center bg-white border border-gray-200`}
           >
-            <Text style={tw`text-gray-800 font-semibold`}>
+            <Text style={tw`text-gray-900 font-medium text-base`}>
               I have an account
             </Text>
           </TouchableOpacity>
         </View>
 
+        {/* Auth Modal */}
         <Modal visible={isModalVisible} animationType="slide" transparent>
-          <View style={tw`flex-1 justify-end bg-black/40`}>
-            <View style={tw`bg-white px-6 pt-5 pb-6 rounded-t-2xl`}>
-              <View style={tw`items-center mb-4`}>
+          <View style={tw`flex-1 justify-end bg-black/50`}>
+            <View style={tw`bg-white px-6 pt-6 pb-8 rounded-t-3xl`}>
+              {/* Handle Bar */}
+              <View style={tw`items-center mb-6`}>
                 <View style={tw`w-12 h-1.5 bg-gray-300 rounded-full`} />
               </View>
-              <Text style={tw`text-xl font-bold mb-1`}>
-                {mode === "signup" ? "Create your account" : "Welcome back"}
-              </Text>
-              <Text style={tw`text-sm text-gray-600 mb-4`}>
-                {mode === "signup"
-                  ? "Sign up with your email"
-                  : "Log in with your email"}
-              </Text>
 
-              <View style={tw`mb-3`}>
-                <Text style={tw`text-sm text-gray-700 mb-2`}>Email</Text>
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
-                  returnKeyType="next"
-                />
-              </View>
-              <View style={tw`mb-5`}>
-                <Text style={tw`text-sm text-gray-700 mb-2`}>Password</Text>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Minimum 6 characters"
-                  secureTextEntry
-                  style={tw`border border-gray-300 rounded-xl px-4 py-3 text-base`}
-                  returnKeyType="done"
-                  onSubmitEditing={handleContinue}
-                />
+              {/* Header */}
+              <View style={tw`mb-6`}>
+                <Text style={tw`text-2xl font-bold text-gray-900 mb-2`}>
+                  {mode === "signup" ? "Create Account" : "Welcome Back"}
+                </Text>
+                <Text style={tw`text-gray-600 leading-5`}>
+                  {mode === "signup"
+                    ? "Sign up with your email to get started"
+                    : "Log in to continue with your tasks"}
+                </Text>
               </View>
 
-              <View style={tw`flex-row gap-3`}>
+              {/* Form Fields */}
+              <View style={tw`gap-4`}>
+                <View>
+                  <Text style={tw`text-gray-700 font-medium mb-2`}>Email</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Enter your email..."
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                    returnKeyType="next"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View>
+                  <Text style={tw`text-gray-700 font-medium mb-2`}>
+                    Password
+                  </Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Enter your password..."
+                    secureTextEntry
+                    style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                    returnKeyType="done"
+                    onSubmitEditing={handleContinue}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={tw`flex-row gap-3 mt-8`}>
                 <TouchableOpacity
                   onPress={() => setIsModalVisible(false)}
-                  style={tw`flex-1 rounded-xl py-3 items-center bg-gray-100`}
+                  style={tw`flex-1 rounded-xl py-4 items-center bg-gray-100`}
                 >
-                  <Text style={tw`text-gray-800 font-semibold`}>Cancel</Text>
+                  <Text style={tw`text-gray-700 font-semibold text-base`}>
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   disabled={isDisabled || submitting}
                   onPress={handleContinue}
                   style={tw.style(
-                    `flex-1 rounded-xl py-3 items-center`,
-                    isDisabled || submitting ? `bg-gray-300` : `bg-blue-600`
+                    `flex-1 rounded-xl py-4 items-center`,
+                    isDisabled || submitting ? `bg-gray-300` : `bg-black`
                   )}
                 >
                   {submitting ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={tw`text-white font-semibold`}>
-                      {mode === "signup" ? "Sign up" : "Log in"}
+                    <Text
+                      style={tw.style(
+                        `font-semibold text-base`,
+                        isDisabled || submitting
+                          ? `text-gray-500`
+                          : `text-white`
+                      )}
+                    >
+                      {mode === "signup" ? "Sign Up" : "Log In"}
                     </Text>
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Error Message */}
               {errorMessage ? (
-                <Text style={tw`text-red-600 text-sm mt-3`}>
-                  {errorMessage}
-                </Text>
+                <View
+                  style={tw`mt-4 p-3 bg-red-50 border border-red-200 rounded-xl`}
+                >
+                  <Text style={tw`text-red-600 text-sm text-center`}>
+                    {errorMessage}
+                  </Text>
+                </View>
               ) : null}
             </View>
           </View>

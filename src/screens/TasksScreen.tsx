@@ -26,13 +26,8 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-
-type Task = {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: number | null;
-};
+import { Task, TaskFilter } from "../types";
+import { COLLECTIONS, TASK_FILTERS } from "../constants";
 
 const makeTasksKey = (username: string) => `tasks:${username}`;
 
@@ -45,17 +40,19 @@ const TasksScreen: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [filter, setFilter] = useState<TaskFilter>(TASK_FILTERS.ALL);
   const [showDatePickerFor, setShowDatePickerFor] = useState<string | null>(
     null
   );
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newNotes, setNewNotes] = useState("");
   const [newDueDate, setNewDueDate] = useState<Date | null>(null);
   const [showAddDatePicker, setShowAddDatePicker] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editNotes, setEditNotes] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   // const [search, setSearch] = useState("");
@@ -77,7 +74,7 @@ const TasksScreen: React.FC = () => {
   useEffect(() => {
     if (!user?.uid) return;
     const q = query(
-      collection(db, "tasks"),
+      collection(db, COLLECTIONS.TASKS),
       where("uid", "==", user.uid),
       orderBy("createdAt", "desc")
     );
@@ -89,6 +86,9 @@ const TasksScreen: React.FC = () => {
           title: data.title,
           completed: !!data.completed,
           dueDate: data.dueDate ?? null,
+          notes: data.notes ?? null,
+          createdAt: data.createdAt,
+          uid: data.uid,
         };
       });
       setTasks(next);
@@ -100,14 +100,16 @@ const TasksScreen: React.FC = () => {
     const title = (titleArg ?? newTitle ?? input).trim();
     if (!title) return;
     if (user?.uid) {
-      addDoc(collection(db, "tasks"), {
+      addDoc(collection(db, COLLECTIONS.TASKS), {
         uid: user.uid,
         title,
         completed: false,
         dueDate: newDueDate ? newDueDate.getTime() : null,
+        notes: newNotes.trim() || null,
         createdAt: Date.now(),
       }).catch(() => {});
       setNewTitle("");
+      setNewNotes("");
       setNewDueDate(null);
       setIsAddOpen(false);
     } else {
@@ -116,9 +118,13 @@ const TasksScreen: React.FC = () => {
         title,
         completed: false,
         dueDate: newDueDate ? newDueDate.getTime() : null,
+        notes: newNotes.trim() || null,
+        createdAt: Date.now(),
+        uid: "local",
       };
       setTasks((prev) => [newTask, ...prev]);
       setNewTitle("");
+      setNewNotes("");
       setNewDueDate(null);
       setIsAddOpen(false);
     }
@@ -130,19 +136,22 @@ const TasksScreen: React.FC = () => {
     );
     if (user?.uid) {
       const current = tasks.find((t) => t.id === id)?.completed ?? false;
-      updateDoc(doc(db, "tasks", id), { completed: !current }).catch(() => {});
+      updateDoc(doc(db, COLLECTIONS.TASKS, id), { completed: !current }).catch(
+        () => {}
+      );
     }
   };
 
   const deleteTask = (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
-    if (user?.uid) deleteDoc(doc(db, "tasks", id)).catch(() => {});
+    if (user?.uid) deleteDoc(doc(db, COLLECTIONS.TASKS, id)).catch(() => {});
   };
 
   const startEdit = (id: string) => setEditingId(id);
   const openEditModal = (task: Task) => {
     setEditId(task.id);
     setEditTitle(task.title);
+    setEditNotes(task.notes || "");
     setEditDueDate(task.dueDate ? new Date(task.dueDate) : null);
     setIsEditOpen(true);
   };
@@ -152,11 +161,16 @@ const TasksScreen: React.FC = () => {
     if (!title) return;
     const dueTs = editDueDate ? editDueDate.getTime() : null;
     setTasks((prev) =>
-      prev.map((t) => (t.id === editId ? { ...t, title, dueDate: dueTs } : t))
+      prev.map((t) =>
+        t.id === editId
+          ? { ...t, title, notes: editNotes.trim() || null, dueDate: dueTs }
+          : t
+      )
     );
     if (user?.uid)
-      await updateDoc(doc(db, "tasks", editId), {
+      await updateDoc(doc(db, COLLECTIONS.TASKS, editId), {
         title,
+        notes: editNotes.trim() || null,
         dueDate: dueTs,
       }).catch(() => {});
     setIsEditOpen(false);
@@ -170,7 +184,9 @@ const TasksScreen: React.FC = () => {
       prev.map((t) => (t.id === id ? { ...t, title: newTitle } : t))
     );
     if (user?.uid)
-      updateDoc(doc(db, "tasks", id), { title: newTitle }).catch(() => {});
+      updateDoc(doc(db, COLLECTIONS.TASKS, id), { title: newTitle }).catch(
+        () => {}
+      );
   };
 
   const setDueDate = (id: string, when: Date) => {
@@ -179,7 +195,9 @@ const TasksScreen: React.FC = () => {
       prev.map((t) => (t.id === id ? { ...t, dueDate: ts } : t))
     );
     if (user?.uid)
-      updateDoc(doc(db, "tasks", id), { dueDate: ts }).catch(() => {});
+      updateDoc(doc(db, COLLECTIONS.TASKS, id), { dueDate: ts }).catch(
+        () => {}
+      );
   };
 
   const renderItem = ({ item }: { item: Task }) => (
@@ -222,10 +240,25 @@ const TasksScreen: React.FC = () => {
                 {item.title}
               </Text>
               {item.dueDate && (
-                <View style={tw`flex-row items-center mt-3`}>
+                <View style={tw`flex-row items-center mt-2`}>
                   <Ionicons name="calendar-outline" size={14} color="#6B7280" />
                   <Text style={tw`text-gray-500 text-sm ml-2`}>
                     Due {new Date(item.dueDate).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+              {item.notes && (
+                <View style={tw`mt-2`}>
+                  <Text
+                    style={tw.style(
+                      `text-sm text-gray-600 leading-4`,
+                      item.completed
+                        ? `line-through text-gray-400`
+                        : `text-gray-600`
+                    )}
+                    numberOfLines={2}
+                  >
+                    {item.notes}
                   </Text>
                 </View>
               )}
@@ -287,41 +320,37 @@ const TasksScreen: React.FC = () => {
         {/* Stats Cards */}
         <View style={tw`flex-row gap-3`}>
           <View
-            style={tw`flex-1 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-3 border border-blue-200`}
+            style={tw`flex-1 rounded-xl p-3 border border-gray-200 bg-gray-50`}
           >
             <View style={tw`flex-row items-center justify-between mb-1`}>
-              <Text style={tw`text-blue-600 text-sm font-medium`}>
+              <Text style={tw`text-gray-600 text-sm font-medium`}>
                 All Tasks
               </Text>
-              <Ionicons name="list-outline" size={14} color="#2563EB" />
+              <Ionicons name="list-outline" size={14} color="#6B7280" />
             </View>
-            <Text style={tw`text-lg font-bold text-blue-900`}>{total}</Text>
+            <Text style={tw`text-lg font-bold text-gray-900`}>{total}</Text>
           </View>
           <View
-            style={tw`flex-1 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-3 border border-orange-200`}
+            style={tw`flex-1 rounded-xl p-3 border border-gray-200 bg-gray-50`}
           >
             <View style={tw`flex-row items-center justify-between mb-1`}>
-              <Text style={tw`text-orange-600 text-sm font-medium`}>
-                Active
-              </Text>
-              <Ionicons name="time-outline" size={14} color="#EA580C" />
+              <Text style={tw`text-gray-600 text-sm font-medium`}>Active</Text>
+              <Ionicons name="time-outline" size={14} color="#6B7280" />
             </View>
-            <Text style={tw`text-lg font-bold text-orange-900`}>{active}</Text>
+            <Text style={tw`text-lg font-bold text-gray-900`}>{active}</Text>
           </View>
           <View
-            style={tw`flex-1 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-3 border border-green-200`}
+            style={tw`flex-1 rounded-xl p-3 border border-gray-200 bg-gray-50`}
           >
             <View style={tw`flex-row items-center justify-between mb-1`}>
-              <Text style={tw`text-green-600 text-sm font-medium`}>Done</Text>
+              <Text style={tw`text-gray-600 text-sm font-medium`}>Done</Text>
               <Ionicons
                 name="checkmark-circle-outline"
                 size={14}
-                color="#16A34A"
+                color="#6B7280"
               />
             </View>
-            <Text style={tw`text-lg font-bold text-green-900`}>
-              {completed}
-            </Text>
+            <Text style={tw`text-lg font-bold text-gray-900`}>{completed}</Text>
           </View>
         </View>
       </View>
@@ -329,7 +358,13 @@ const TasksScreen: React.FC = () => {
       {/* Filter Tabs */}
       <View style={tw`px-6 py-2`}>
         <View style={tw`flex-row gap-3`}>
-          {(["all", "active", "completed"] as const).map((f) => (
+          {(
+            [
+              TASK_FILTERS.ALL,
+              TASK_FILTERS.ACTIVE,
+              TASK_FILTERS.COMPLETED,
+            ] as const
+          ).map((f) => (
             <TouchableOpacity
               key={f}
               onPress={() => setFilter(f)}
@@ -354,9 +389,9 @@ const TasksScreen: React.FC = () => {
       <View style={tw`flex-1 px-6`}>
         <FlatList
           data={tasks.filter((t) =>
-            filter === "all"
+            filter === TASK_FILTERS.ALL
               ? true
-              : filter === "active"
+              : filter === TASK_FILTERS.ACTIVE
               ? !t.completed
               : t.completed
           )}
@@ -376,11 +411,13 @@ const TasksScreen: React.FC = () => {
                   color="#9CA3AF"
                 />
               </View>
-              <Text style={tw`text-xl font-semibold text-gray-700 mb-2`}>
-                {filter === "all" ? "No tasks yet" : `No ${filter} tasks`}
+              <Text style={tw`text-xl font-semibold text-gray-700 mb-1`}>
+                {filter === TASK_FILTERS.ALL
+                  ? "No tasks yet"
+                  : `No ${filter} tasks`}
               </Text>
               <Text style={tw`text-gray-500 text-center leading-6`}>
-                {filter === "all"
+                {filter === TASK_FILTERS.ALL
                   ? "Tap the + button to create your first task"
                   : `Switch to "All" to see all your tasks`}
               </Text>
@@ -433,11 +470,26 @@ const TasksScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Due Date */}
+              {/* Notes */}
               <View>
                 <Text style={tw`text-gray-700 font-medium mb-2`}>
-                  Due Date 
+                  Notes (Optional)
                 </Text>
+                <TextInput
+                  value={newNotes}
+                  onChangeText={setNewNotes}
+                  placeholder="Add notes or description..."
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Due Date */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>Due Date</Text>
                 <TouchableOpacity
                   onPress={() => setShowAddDatePicker(true)}
                   style={tw`border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between bg-gray-50`}
@@ -469,6 +521,7 @@ const TasksScreen: React.FC = () => {
                 onPress={() => {
                   setIsAddOpen(false);
                   setNewTitle("");
+                  setNewNotes("");
                   setNewDueDate(null);
                 }}
                 style={tw`flex-1 rounded-xl py-4 items-center bg-gray-100`}
@@ -533,11 +586,26 @@ const TasksScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Due Date */}
+              {/* Notes */}
               <View>
                 <Text style={tw`text-gray-700 font-medium mb-2`}>
-                  Due Date
+                  Notes (Optional)
                 </Text>
+                <TextInput
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  placeholder="Add notes or description..."
+                  style={tw`border border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50`}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Due Date */}
+              <View>
+                <Text style={tw`text-gray-700 font-medium mb-2`}>Due Date</Text>
                 <TouchableOpacity
                   onPress={() => setShowEditDatePicker(true)}
                   style={tw`border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between bg-gray-50`}
