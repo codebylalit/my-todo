@@ -25,6 +25,7 @@ import {
   query,
   updateDoc,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 import { Task, TaskFilter } from "../types";
 import { COLLECTIONS, TASK_FILTERS } from "../constants";
@@ -81,13 +82,19 @@ const TasksScreen: React.FC = () => {
     const unsub = onSnapshot(q, (snap) => {
       const next: Task[] = snap.docs.map((d) => {
         const data: any = d.data();
+        const createdAtValue =
+          data?.createdAt && typeof data.createdAt.toMillis === "function"
+            ? data.createdAt.toMillis()
+            : typeof data?.createdAt === "number"
+            ? data.createdAt
+            : Date.now();
         return {
           id: d.id,
           title: data.title,
           completed: !!data.completed,
           dueDate: data.dueDate ?? null,
           notes: data.notes ?? null,
-          createdAt: data.createdAt,
+          createdAt: createdAtValue,
           uid: data.uid,
         };
       });
@@ -106,7 +113,7 @@ const TasksScreen: React.FC = () => {
         completed: false,
         dueDate: newDueDate ? newDueDate.getTime() : null,
         notes: newNotes.trim() || null,
-        createdAt: Date.now(),
+        createdAt: serverTimestamp(),
       }).catch(() => {});
       setNewTitle("");
       setNewNotes("");
@@ -288,10 +295,9 @@ const TasksScreen: React.FC = () => {
   const navigation = useNavigation();
   const remaining = tasks.filter((t) => !t.completed).length;
   const displayName = useMemo(() => {
-    const email = user?.email ?? "";
-    const name = email.split("@")[0] || "there";
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }, [user?.email]);
+    const base = user?.displayName || user?.email?.split("@")[0] || "there";
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }, [user?.displayName, user?.email]);
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
   const active = total - completed;
