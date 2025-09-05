@@ -13,9 +13,18 @@ A beautiful, modern todo application built with React Native and Expo, featuring
 - **Modern UI**: Clean, minimalist design with smooth animations
 - **Cross-platform**: Runs on iOS, Android, and Web
 
-## 📱 Video Link Of the App 
+## 📱 Video/Screenshots
 
 https://drive.google.com/file/d/1DPlUB9zndngz9CiKcOwt71qvI8sOaOVU/view?usp=sharing
+
+![IMG-20250905-WA0013](https://github.com/user-attachments/assets/d200b81e-502e-4cb1-805f-8a9a0bcb0c7b)
+![IMG-20250905-WA0012](https://github.com/user-attachments/assets/36a231bb-b5a8-45c1-a7ff-7ff6ce4f52e8)
+![IMG-20250905-WA0011](https://github.com/user-attachments/assets/9d4a82bd-ce57-4d77-8ab0-2d4cb74b3149)
+![IMG-20250905-WA0010](https://github.com/user-attachments/assets/9e477fae-5d5e-4722-b957-b687f43aede1)
+![IMG-20250905-WA0009](https://github.com/user-attachments/assets/503e306f-947e-4470-ac03-9e8a71c5feeb)
+![IMG-20250905-WA0008](https://github.com/user-attachments/assets/209d203d-d39d-46d5-a61a-f43abaaf5030)
+![IMG-20250905-WA0007](https://github.com/user-attachments/assets/f496ffeb-69b5-4db6-b1cc-5e7ebe110e46)
+
 
 ## 🛠️ Tech Stack
 
